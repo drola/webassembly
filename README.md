@@ -7,6 +7,7 @@ It is like .exe (or whatever your device runs) that can run in browser. It is po
 ### Links
 
  - [Slides](https://webassembly.drola.si/slides/index.html)
+ - [Recording of the talk](https://www.todojs.com/unveiling-webassembly-what-why-how-by-matjaz-drolc/)
  - [Demo: Primes (without WASM)](https://webassembly.drola.si/demos/primes/index-without-wasm.html)
  - [Demo: Primes (with WASM)](https://webassembly.drola.si/demos/primes/index-with-wasm.html)
  - [Demo: Face detection](https://webassembly.drola.si/demos/face/index.html)
