@@ -12,6 +12,7 @@
   "author": "Matjaž Drolc <matjaz@drola.si>",
   "license": "CC-BY-SA-4.0",
   "dependencies": {
+    "gitbook-cli": "^2.3.2",
     "http-serve": "^1.0.1"
   }
 }

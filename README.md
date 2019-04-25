@@ -6,7 +6,8 @@ It is like .exe (or whatever your device runs) that can run in browser. It is po
 
 ### Links
 
- - [Slides](https://webassembly.drola.si/slides/index.html)
+ - [Serverless Jupyter, slides, LjPyMeetup April 2019](https://webassembly.drola.si/serverless-python-slides.pdf)
+ - [Slides, JSDayES 2017](https://webassembly.drola.si/slides/index.html)
  - [Recording of the talk](https://www.todojs.com/unveiling-webassembly-what-why-how-by-matjaz-drolc/)
  - [Demo: Primes (without WASM)](https://webassembly.drola.si/demos/primes/index-without-wasm.html)
  - [Demo: Primes (with WASM)](https://webassembly.drola.si/demos/primes/index-with-wasm.html)

@@ -13,5 +13,4 @@ css/reveal.min.css
 js/reveal.min.js
 _book
 opencv
-/*.pdf
-
+.firebase/
