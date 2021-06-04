@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>How to install Emscripten on WebAssemnbly</title>
+    <link>http://example.org/How_to_install_Emscripten/</link>
+    <description>Recent content in How to install Emscripten on WebAssemnbly</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	<atom:link href="http://example.org/How_to_install_Emscripten/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+  </channel>
+</rss>

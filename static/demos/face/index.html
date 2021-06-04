@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Face detection demo</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="icon" type="image/png" href="images/favicon.png">
+
+  <style type="text/css">
+    #cvs, #webcam, #cvs_after {
+      border: 1px solid #ccc;
+      max-width: 100%;
+    }
+
+    .worker-status {
+      background-color: white;
+      transition: background-color 0.3s;
+    }
+
+    .worker-status-green {
+      background-color: green;
+      color: white;
+      transition: background-color 0.0s !important;
+    }
+  </style>
+
+</head>
+<body>
+  <div class="container">
+    <br>
+
+    <h1>Face detect</h1>
+    <table class="u-full-width">
+      <tbody>
+        <tr>
+          <td id="worker-status-ok">Worker</td>
+          <td id="worker-status-ready" class="worker-status worker-status-green">Ready</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <video id="webcam" autoplay style="display: none;"></video>
+
+    <canvas width="1024" height="720" id="cvs"></canvas>
+  </div>
+
+
+<script type="text/javascript">
+  document.getElementById("worker-status-ok").style.color = "red";
+
+  var width = 1024;
+  var height = 720;
+  var videoAspectRatio;
+
+  var workingBuffer = null;
+  var worker = new Worker('face_detect_web_worker.js');
+  var workerReady = false;
+  var faces = [];
+  var eyes = [];
+  worker.onmessage = function(e) {
+    switch(e.data.type) {
+      case "worker_ready":
+        document.getElementById("worker-status-ok").style.color = "darkgreen";
+        document.getElementById("worker-status-ready").classList.add("worker-status-green");
+        workerReady = true;
+        break;
+      case "got_faces":
+        faces = e.data.faces;
+        eyes = e.data.eyes;
+        break;
+    }
+  }
+
+  function sendFrameToWorker(imageData) {
+    worker.postMessage({
+      type: "image_data",
+      imageData: imageData
+    }, [imageData.data.buffer]);
+    workerReady = false;
+    window.setTimeout(function() {
+      document.getElementById("worker-status-ready").classList.remove("worker-status-green");
+    }, 1);
+  }
+
+
+
+  function nextFrame() {
+    	var ctx = document.getElementById("cvs").getContext("2d");
+      var drawnWidth = Math.min(width, height * videoAspectRatio);
+      var drawnHeight = Math.min(height, width / videoAspectRatio);
+      var borderLeft = Math.max(0, (width - drawnWidth) / 2);
+      var borderTop = Math.max(0, (height - drawnHeight) / 2);
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(document.getElementById('webcam'), borderLeft, borderTop, drawnWidth, drawnHeight);
+
+      if (workerReady) {
+        sendFrameToWorker(ctx.getImageData(0, 0, width, height));
+      }
+
+      //Draw detected features to the Canvas
+      for(var i in faces) {
+        var face = faces[i];
+        ctx.beginPath();
+        ctx.arc(face.x, face.y, (face.width + face.height) / 4, 0, 2 * Math.PI, false);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#00Ff00';
+        ctx.stroke();
+      }
+      for(var i in eyes) {
+        var eye = eyes[i];
+        ctx.beginPath();
+        ctx.arc(eye.x, eye.y, (eye.width + eye.height) / 4, 0, 2 * Math.PI, false);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#0000ff';
+        ctx.stroke();
+      }
+
+    	requestAnimationFrame( nextFrame );
+  }
+
+  function onLoad() {
+    //Get video from the camera
+    var video = document.getElementById('webcam');
+    navigator.getUserMedia  = navigator.getUserMedia ||
+                          navigator.webkitGetUserMedia ||
+                          navigator.mozGetUserMedia ||
+                          navigator.msGetUserMedia;
+    navigator.getUserMedia({"video": true}, function(stream) {
+      console.log(stream.getVideoTracks()[0]);
+       videoAspectRatio = stream.getVideoTracks()[0].getSettings().width / stream.getVideoTracks()[0].getSettings().height;
+       video.src = window.URL.createObjectURL(stream);
+       requestAnimationFrame( nextFrame );
+     }, function(e) {
+       console.log(e);
+     });
+
+  }
+  if (document.readyState === 'complete' || document.readyState !== 'loading') {
+    onLoad();
+  } else {
+    document.addEventListener('DOMContentLoaded', onLoad);
+  }
+</script>
+</body>
+</html>

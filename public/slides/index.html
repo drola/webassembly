@@ -1,0 +1,290 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>WebAssembly</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/webassembly.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h1><span style="font-size: 0.9em">WebAssembly</span></h1>
+					<h3>Binary format for the web</h3>
+					<p>
+						<br>
+						<small>Presented by <a href="https://drola.si">Matjaž Drolc</a> / <a href="https://twitter.com/MatjazDrolc">@MatjazDrolc</a> / <a href="https://github.com/drola">github.com/drola</a></small>
+					</p>
+				</section>
+
+				<section data-background="images/3d_viewer_screenshot.png">
+				</section>
+
+				<section>
+					<h2>WebAssembly is a format suitable for <strong>compilation</strong> to the web.</h2>
+				</section>
+
+
+				<section>
+					<h2>How does processor work?</h2>
+					<img style="max-height: 400px" src="images/03-04-computer_architecture17.png">
+					<p><small>Source: <a href="https://hacks.mozilla.org/2017/02/a-crash-course-in-assembly/">https://hacks.mozilla.org/2017/02/a-crash-course-in-assembly/</a></small></p>
+				</section>
+
+				<section>
+					<h1>Demo</h1>
+					<p>
+						<a href="https://s3.amazonaws.com/mozilla-games/ZenGarden/EpicZenGarden.html">Epic Zen Garden</a>
+					</p>
+				</section>
+
+				<section data-background="images/wasmachine.png">
+					<img src="images/fpga.jpg">
+					<small style="background: white">Source: <a href="https://en.wikipedia.org/wiki/Field-programmable_gate_array">https://en.wikipedia.org/wiki/Field-programmable_gate_array</a></small>
+				</section>
+
+				<section>
+					<h2>Usage scenarios</h2>
+					<p>
+						<ul>
+							<li>Write faster versions of specific algorithms</li>
+							<li>Use existing libraries in browser</li>
+							<li>Reuse algorithms from the server-side</li>
+							<li>Distribute whole application as WebAssembly</li>
+						</ul>
+					</p>
+				</section>
+
+				<section>
+					<h3>Optimizing an algorithm in a web application</h3>
+				</section>
+
+				<section>
+					<h2>Example</h2>
+					<a href="/demos/primes">/demos/primes</a>
+				</section>
+
+				<section>
+					<h3>Finding prime numbers: Sieve of Eratosthenes algorithm</h3>
+					<img src="images/Sieve_of_Eratosthenes_animation.gif">
+					<p><small>Source: <a href="https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes">https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes</a></small></p>
+				</section>
+
+				<section>
+					<img src="images/emscripten.png">
+					<a href="https://kripken.github.io/emscripten-site/">https://kripken.github.io/emscripten-site</a>
+				</section>
+
+				<section>
+					<h2>Installing Emscripten</h2>
+					<pre><code class="hljs bash" data-trim contenteditable>
+# Install dependencies
+sudo apt-get install git cmake build-essential python2.7 nodejs default-jre
+wget https://s3.amazonaws.com/mozilla-games/emscripten/releases/emsdk-portable.tar.gz
+tar -zxvf emsdk-portable.tar.gz
+cd ./emsdk-portable
+./emsdk update
+./emsdk install sdk-incoming-64bit #If you are getting "collect2: error: ld returned 1 exit status" error, try running ./emsdk install -j1 sdk-incoming-64bit
+./emsdk activate sdk-incoming-64bit
+cd emcscripten/incoming
+./embuilder.py build binaryen
+cd ../..
+source ./emsdk_env.sh
+					</code></pre>
+				</section>
+
+				<section>
+					<h2>JS &lt;-&gt; C++</h2>
+					<pre><code class="hljs cpp">
+EMSCRIPTEN_BINDINGS(my_module) {
+    emscripten::function("findBiggestPrimeLessThan",
+				&findBiggestPrimeLessThan);
+					</code></pre>
+					<pre><code class="hljs javascript">
+myWasmLibrary().then(function(myWasmLibrary) {
+    //WASM module has been loaded and initialized.
+    var result = myWasmLibrary.findBiggestPrimeLessThan(1000);
+});
+					</code></pre>
+					<small>More examples:<br>
+						<a href="https://kripken.github.io/emscripten-site/docs/porting/connecting_cpp_and_javascript/embind.html">https://kripken.github.io/emscripten-site/docs/porting/connecting_cpp_and_javascript/embind.html</a>
+					</small>
+				</section>
+
+				<section>
+					<h3>Compiling</h3>
+					<pre><code class="hljs bash">
+emcc -O3 --llvm-lto 3 `#Highest optimization level` \
+  -s ALLOW_MEMORY_GROWTH=1 `#Allow memory growth from default 16MB if needed` \
+  -s USE_CLOSURE_COMPILER=1 `#Use closure compiler to reduce size of .js file` \
+  -s EXPORTED_RUNTIME_METHODS=[] `#Don't export any runtime methods` \
+  -s WASM=1 `#Generate WebAssembly` \
+  -s MODULARIZE=1 `#Wrap in module` \
+  -s NO_EXIT_RUNTIME=1 `#Don't destroy runtime after main() finishes` \
+  -s EXPORT_NAME="'myWasmLibrary'" `#Export as 'myWasmLibrary'` \
+  -std=c++11 `#Use C++11 standard` \
+  --bind `#Generate bindings` \
+  -o wasm.js `#Output to wasm.js` \
+  findBiggestPrimeLessThan.cpp #Input file(s)
+	        </code></pre>
+				</section>
+
+				<section>
+					<h2>WebDSP <br> video editor demo</h2>
+					<a href="http://tiny.cc/webdsp">http://tiny.cc/webdsp</a>
+				</section>
+
+				<section>
+					<h2>WebAssembly Explorer</h2>
+					<a href="https://mbebenita.github.io/WasmExplorer/">https://mbebenita.github.io/WasmExplorer/</a>
+				</section>
+
+				<section>
+					<h2>Security</h2>
+					<p>
+						<ul>
+							<li>Limited set of instructions</li>
+							<li>More limited control flow than in x86</li>
+							<li>Can only call existing APIs available in JavaScript</li>
+							<li>Linear memory and program code are separated</li>
+						</ul>
+					</p>
+				</section>
+
+				<section>
+					<h2>Example: computer vision with OpenCV</h2>
+					<a href="/demos/face">/demos/face</a>
+				</section>
+
+				<section>
+					<h2>Browser support</h2>
+					<table>
+						<thead>
+							<th style="vertical-align: middle">No</th>
+							<th style="vertical-align: middle">In development</th>
+							<th style="vertical-align: middle">Yes</th>
+						</thead>
+						<tbody>
+							<tr>
+								<td style="vertical-align: middle">
+									<ul>
+										<li>Internet Explorer</li>
+									</ul>
+								</td>
+								<td style="vertical-align: middle">
+									<ul>
+										<li>Safari</li>
+									</ul>
+								</td>
+								<td style="vertical-align: middle">
+									<ul>
+										<li>Firefox</li>
+										<li>Chrome</li>
+										<li>Edge (flag!)</li>
+										<li>Opera</li>
+									</ul>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</section>
+
+				<section>
+					<h2>Problems</h2>
+					<ul>
+						<li><a href="https://github.com/kripken/emscripten/blob/master/src/settings.js">github.com/kripken/emscripten/.../settings.js</a></li>
+						<li>Efficient transfer of data between C++ and JS</li>
+						<li>Manual memory management</li>
+					</ul>
+				</section>
+
+				<section>
+					<h2>Opportunity to learn new languages</h2>
+					<ul>
+						<li>C++ has been modernized</li>
+						<li>Learning C++ gives you power</li>
+						<li>Rust, Go compiler in development</li>
+					</ul>
+				</section>
+
+				<section>
+					<h2>WebAssembly roadmap</h2>
+					<p>
+						<ul>
+							<li>Improved tooling</li>
+							<li>Threads</li>
+							<li>SIMD instructions<br><small>(single instruction, multiple data)</small></li>
+						</ul>
+					</p>
+				</section>
+
+				<section>
+					<h3>This is just the beginning</h3>
+					<ul>
+						<li>It will get faster</li>
+						<li>More languages to come</li>
+						<li>Wide browser support</li>
+					</ul>
+				</section>
+
+				<section>
+					<h3>Invitation for everyone!</h3>
+					<img src="images/invitation.gif">
+					<p>
+						Hack, write documentation, expand boundaries.
+					</p>
+				</section>
+
+				<section>
+					<h3>Muchas gracias.</h3>
+					<br>
+					<p>Slides and links:<br> <a href="https://drola.si/webassembly">https://drola.si/webassembly</a></p>
+				</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+
+				<script>
+
+					// More info https://github.com/hakimel/reveal.js#configuration
+					Reveal.initialize({
+						controls: true,
+						progress: true,
+						history: true,
+						center: true,
+
+						transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+						// More info https://github.com/hakimel/reveal.js#dependencies
+						dependencies: [
+							{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+							{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+							{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+							{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+							{ src: 'plugin/zoom-js/zoom.js', async: true },
+							{ src: 'plugin/notes/notes.js', async: true }
+						]
+					});
+
+				</script>
+	</body>
+</html>
